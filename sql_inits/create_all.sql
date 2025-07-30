@@ -28,7 +28,6 @@ CREATE TABLE BIT.LGP
     db_uid              LowCardinality(String),
     host                LowCardinality(String),
     FileName            String,
-    FilePath            String,
 )
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(DateTime)
@@ -112,7 +111,6 @@ SELECT
     p.db_uid,
     p.host,
     p.FileName,
-    p.FilePath,
 
     -- поля из IBASE
     ib.File    AS IBASE_File,
