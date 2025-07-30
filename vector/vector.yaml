@@ -91,6 +91,9 @@ transforms:
         .TransactionDate   = null
       }
 
+      
+      
+
   parse_lgf:
     type: remap
     inputs: [ lgf_logs ]
@@ -110,7 +113,116 @@ transforms:
          .name = "LGF"
         } else { abort }
         
-        
+        applications_map = {
+        "1CV8": "Толстый клиент",
+        "1CV8C": "Тонкий клиент",
+        "WebClient": "Веб-клиент",
+        "Designer": "Конфигуратор",
+        "COMConnection": "Внешнее соединение (COM, обычное)",
+        "WSConnection": "Сессия web-сервиса",
+        "BackgroundJob": "Фоновое задание",
+        "SystemBackgroundJob": "Системное фоновое задание",
+        "SrvrConsole": "Консоль кластера",
+        "COMConsole": "Внешнее соединение (COM, административное)",
+        "JobScheduler": "Планировщик заданий",
+        "Debugger": "Отладчик",
+        "RAS": "Сервер администрирования",
+        "HTTPServiceConnection": "Соединение с HTTP-сервисом",
+        "ODataConnection": "Соединение с автоматическим REST API"
+        }
+          
+        events_map = {
+        "$$Access$$.Access": "Доступ.Доступ",
+        "$$Access$$.AccessDenied": "Доступ.Отказ в доступе",
+        "$$Data$$.Delete": "Данные.Удаление",
+        "$$Data$$.DeletePredefinedData": "Данные.Удаление предопределенных данных",
+        "$$Data$$.DeleteVersions": "Данные.Удаление версий",
+        "$$Data$$.New": "Данные.Добавление",
+        "$$Data$$.NewPredefinedData": "Данные.Добавление предопределенных данных",
+        "$$Data$$.NewVersion": "Данные.Добавление версии",
+        "$$Data$$.Pos": "Данные.Проведение",
+        "$$Data$$.PredefinedDataInitialization": "Данные.Инициализация предопределенных данных",
+        "$$Data$$.PredefinedDataInitializationDataNotFound": "Данные.Инициализация предопределенных данных.Данные не найдены",
+        "$$Data$$.SetPredefinedDataInitialization": "Данные.Установка инициализации предопределенных данных",
+        "$$Data$$.SetStandardODataInterfaceContent": "Данные.Изменение состава стандартного интерфейса OData",
+        "$$Data$$.TotalsMaxPeriodUpdate": "Данные.Изменение максимального периода рассчитанных итогов",
+        "$$Data$$.TotalsMinPeriodUpdate": "Данные.Изменение минимального периода рассчитанных итогов",
+        "$$Data$$.Post": "Данные.Проведение",
+        "$$Data$$.Unpost": "Данные.Отмена проведения",
+        "$$Data$$.Update": "Данные.Изменение",
+        "$$Data$$.UpdatePredefinedData": "Данные.Изменение предопределенных данных",
+        "$$Data$$.VersionCommentUpdate": "Данные.Изменение комментария версии",
+        "$$InfoBase$$.ConfigExtensionUpdate": "Информационная база.Изменение расширения конфигурации",
+        "$$InfoBase$$.ConfigUpdate": "Информационная база.Изменение конфигурации",
+        "$$InfoBase$$.DBConfigBackgroundUpdateCancel": "Информационная база.Отмена фонового обновления",
+        "$$InfoBase$$.DBConfigBackgroundUpdateFinish": "Информационная база.Завершение фонового обновления",
+        "$$InfoBase$$.DBConfigBackgroundUpdateResume": "Информационная база.Продолжение (после приостановки) процесса фонового обновления",
+        "$$InfoBase$$.DBConfigBackgroundUpdateStart": "Информационная база.Запуск фонового обновления",
+        "$$InfoBase$$.DBConfigBackgroundUpdateSuspend": "Информационная база.Приостановка (пауза) процесса фонового обновления",
+        "$$InfoBase$$.DBConfigExtensionUpdate": "Информационная база.Изменение расширения конфигурации",
+        "$$InfoBase$$.DBConfigExtensionUpdateError": "Информационная база.Ошибка изменения расширения конфигурации",
+        "$$InfoBase$$.DBConfigUpdate": "Информационная база.Изменение конфигурации базы данных",
+        "$$InfoBase$$.DBConfigUpdateStart": "Информационная база.Запуск обновления конфигурации базы данных",
+        "$$InfoBase$$.DumpError": "Информационная база.Ошибка выгрузки в файл",
+        "$$InfoBase$$.DumpFinish": "Информационная база.Окончание выгрузки в файл",
+        "$$InfoBase$$.DumpStart": "Информационная база.Начало выгрузки в файл",
+        "$$InfoBase$$.EraseData": "Информационная база.Удаление данных информационной базы",
+        "$$InfoBase$$.EventLogReduce": "Информационная база.Сокращение журнала регистрации",
+        "$$InfoBase$$.EventLogReduceError": "Информационная база.Ошибка сокращения журнала регистрации",
+        "$$InfoBase$$.EventLogSettingsUpdate": "Информационная база.Изменение параметров журнала регистрации",
+        "$$InfoBase$$.EventLogSettingsUpdateError": "Информационная база.Ошибка при изменение настроек журнала регистрации",
+        "$$InfoBase$$.InfoBaseAdmParamsUpdate": "Информационная база.Изменение параметров информационной базы",
+        "$$InfoBase$$.InfoBaseAdmParamsUpdateError": "Информационная база.Ошибка изменения параметров информационной базы",
+        "$$InfoBase$$.IntegrationServiceActiveUpdate": "Информационная база.Изменение активности сервиса интеграции",
+        "$$InfoBase$$.IntegrationServiceSettingsUpdate": "Информационная база.Изменение настроек сервиса интеграции",
+        "$$InfoBase$$.MasterNodeUpdate": "Информационная база.Изменение главного узла",
+        "$$InfoBase$$.PredefinedDataUpdate": "Информационная база.Обновление предопределенных данных",
+        "$$InfoBase$$.RegionalSettingsUpdate": "Информационная база.Изменение региональных установок",
+        "$$InfoBase$$.RestoreError": "Информационная база.Ошибка загрузки из файла",
+        "$$InfoBase$$.RestoreFinish": "Информационная база.Окончание загрузки из файла",
+        "$$InfoBase$$.RestoreStart": "Информационная база.Начало загрузки из файла",
+        "$$InfoBase$$.SecondFactorAuthTemplateDelete": "Информационная база.Удаление шаблона вторго фактора аутентификации",
+        "$$InfoBase$$.SecondFactorAuthTemplateNew": "Информационная база.Добавление шаблона вторго фактора аутентификации",
+        "$$InfoBase$$.SecondFactorAuthTemplateUpdate": "Информационная база.Изменение шаблона вторго фактора аутентификации",
+        "$$InfoBase$$.SetPredefinedDataUpdate": "Информационная база.Установить обновление предопределенных данных",
+         "$$InfoBase$$.TARImportant": "Тестирование и исправление.Ошибка",
+        "$$InfoBase$$.TARInfo": "Тестирование и исправление.Сообщение",
+        "$$InfoBase$$.TARMess": "Тестирование и исправление.Предупреждение",
+        "$$Job$$.Cancel": "Фоновое задание.Отмена",
+        "$$Job$$.Error": "Фоновое задание.Ошибка выполнения",
+        "$$Job$$.Fail": "Фоновое задание.Ошибка",
+        "$$Job$$.Finish": "Фоновое задание.Успешное завершение",
+        "$$Job$$.Start": "Фоновое задание.Запуск",
+        "$$OpenIDProvider$$.NegativeAssertion": "Провайдер OpenID.Отклонено",
+        "$$OpenIDProvider$$.PositiveAssertion": "Провайдер OpenID.Подтверждено",
+        "$$PerformError$": "Ошибка выполнения",
+        "$$Session$$.Authentication": "Сеанс.Аутентификация",
+        "$$Session$$.AuthenticationError": "Сеанс.Ошибка аутентификации",
+        "$$Session$$.AuthenticationFirstFactor": "Сеанс.Аутентификация первый фактор",
+        "$$Session$$.ConfigExtensionApplyError": "Сеанс.Ошибка применения расширения конфигурации",
+        "$$Session$$.Finish": "Сеанс.Завершение",
+        "$$Session$$.Start": "Сеанс.Начало",
+        "$$Transaction$$.Begin": "Транзакция.Начало",
+        "$$Transaction$$.Commit": "Транзакция.Фиксация",
+        "$$Transaction$$.Rollback": "Транзакция.Отмена",
+        "$$User$$.AuthenticationLock": "Пользователи.Блокировка аутентификации",
+        "$$User$$.AuthenticationUnlock": "Пользователи.Разблокировка аутентификации",
+        "$$User$$.AuthenticationUnlockError": "Пользователи.Ошибка разблокировки аутентификации",
+        "$$User$$.Delete": "Пользователи.Удаление",
+        "$$User$$.DeleteError": "Пользователи.Ошибка удаления",
+        "$$User$$.New": "Пользователи.Добавление",
+        "$$User$$.NewError": "Пользователи.Ошибка добавления",
+        "$$User$$.Update": "Пользователи.Изменение",
+        "$$User$$.UpdateError": "Пользователи.Ошибка изменения"
+        }
+      
+        if .typeId == "4" { 
+          .value = get(events_map, [.value]) ?? .value
+        }
+        if .typeId == "3" { 
+          .value = get(applications_map, [.value]) ?? .value
+        }
+
   parse_ibase:
     type: remap
     inputs: [ ibases_logs ]
@@ -180,7 +292,7 @@ sinks:
     table: "{{ .name }}"
     batch:
       max_events: 10000
-      timeout_secs: 15
+      timeout_secs: 3
     acknowledgements:
       enabled: true
 
