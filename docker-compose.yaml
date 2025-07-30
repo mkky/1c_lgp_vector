@@ -1,0 +1,31 @@
+services:
+
+  click_house:
+    image: clickhouse/clickhouse-server
+    container_name: clickhouse_logs
+    restart: no
+    volumes:
+      - ./sql_inits:/docker-entrypoint-initdb.d/
+    ports:
+      - 8123:8123
+    env_file:
+      - ./envs.sh
+
+  vector:
+    image: timberio/vector:latest-debian
+    env_file:
+      - ./envs.sh
+    hostname: vector_techJournal
+    container_name: vector_techJournal
+    restart: no
+    volumes:
+      - ./vector:/etc/vector/
+    #  - ./fileProgress:/var/lib/vector   ##
+      - ./logs:/var/log
+      - ./tmp:/tmp
+    ports:
+      - 8686:8686
+    depends_on:
+      click_house:
+        condition: service_started
+

@@ -1,0 +1,187 @@
+timezone: Europe/Moscow
+
+api:
+  enabled: true
+
+sources:
+  lgp_logs:
+    type: file
+    include:
+      - "/var/log/**/1Cv8Log/*.lgp"
+    fingerprint:
+      strategy: device_and_inode
+    multiline:
+      start_pattern: "^\\{\\d{14},\\w,"
+      condition_pattern: "^\\{\\d{14},\\w,"
+      mode: halt_before
+      timeout_ms: 1000
+      
+  lgf_logs:
+    type: file
+    fingerprint:
+      strategy: device_and_inode
+    include:
+      - "/var/log/**/1Cv8Log/*.lgf"
+      
+  ibases_logs:
+    type: file
+    fingerprint:
+      strategy: checksum
+      lines: 2
+    include:
+      - "/var/log/**/ibases*.v8i"
+    multiline:
+      start_pattern: ""
+      condition_pattern: "NEVERFOUNDLINE"
+      mode: halt_before
+      timeout_ms: 1000      
+
+
+transforms:
+  parse_lgp:
+    type: remap
+    inputs: [ lgp_logs ]
+    source: |-
+      .FilePath = to_string(.file) ?? "unknown"
+      .FileName = replace(.FilePath, r'.*[\\/]([^\\/]+)$', "$$1")
+      parsed, err = parse_regex(.message, r'\{(?P<DateTimeRaw>\d{14}),(?P<TransactionStatus>\w),\s*\{(?P<TransactionDate>[^\}]+)\},(?P<User>\d+),(?P<Computer>\d+),(?P<Application>\d+),(?P<Connection>\d+),(?P<Event>\d+),(?P<Severity>\w),"(?P<Comment>[\s\S]*?)",(?P<Metadata>\d+),\s*(?P<Data>[\s\S]+?\}),"(?P<DataPresentation>.*?)",(?P<Server>\d+),(?P<MainPort>\d+),(?P<AddPort>\d+),(?P<Session>\d+)', numeric_groups: false)
+      if err != null {
+        abort
+      }
+      . = merge(., parsed)
+      .name = "LGP"
+      ts_format = "%Y-%m-%dT%H:%M:%S"
+      .DateTime =format_timestamp!(parse_timestamp!(.DateTimeRaw, "%Y%m%d%H%M%S"), ts_format, timezone:"UTC")
+      . = merge(., parse_regex!(.FilePath, r'(?P<db_uid>\w{8}\-\w{4}-\w{4}-\w{4}-\w{12})'))
+      del(.message)
+      ts_map = {
+        "N": "Нет транзакции",
+        "U": "Зафиксирована",
+        "R": "Не завершена",
+        "C": "Отменена",
+      }
+      sev_map = {
+        "I": "Информация",
+        "E": "Ошибка",
+        "W": "Предупреждение",
+        "N": "Примечание",
+      }
+      .TransactionStatus = get(ts_map, [.TransactionStatus]) ?? .TransactionStatus
+      .Severity          = get(sev_map, [.Severity]) ?? .Severity
+      data_first_value = replace(.Data, r'[\s\S]*\{"\w","?([^\}]+)"?\}[\s\S]*', "$$1") ?? .Data
+      if data_first_value != .Data {
+        .Data = data_first_value
+        } else {
+        .Data = ""
+        }
+      startEpoch = -62135632799
+      parts         = split!(.TransactionDate, ",")
+      hexDate       = parts[0]
+      hexNumber     = parts[1]
+      if hexDate != "0" && hexDate != "" {
+        parsed        = parse_int!(hexDate, base: 16)
+        base_ts       = ceil(startEpoch + parsed / 10000)
+        corrected_ts  = base_ts + (7 * 3600)
+        #ns            = corrected_ts * 1000000000
+        .TransactionDate   = format_timestamp!(parse_timestamp!(to_string!(corrected_ts),
+                                "%s",),  "%Y-%m-%d %H:%M:%S",
+                                timezone: "UTC")
+        .TransactionNumber = parse_int!(hexNumber, base: 16)
+      } else {
+        .TransactionDate   = null
+      }
+
+  parse_lgf:
+    type: remap
+    inputs: [ lgf_logs ]
+    source: |-
+        rec = {}
+        .message = to_string(.message)  ?? ""
+        if starts_with(.message, "{5,") || starts_with(.message, "{1,") {
+          rec, err1 = parse_regex(.message, r'^\{(?P<typeId>[1-8]),(?P<uuid>[^,]+),"(?P<value>[^,]+)",(?P<id>\d+)\},?')
+        } else if starts_with(.message, "{7,") || starts_with(.message, "{8,") {
+         rec, err2 = parse_regex(.message, r'^\{(?P<typeId>[1-8]),(?P<value>\d+),(?P<id>\d+)\},?')
+        }else {
+         rec, err3 = parse_regex(.message, r'^\{(?P<typeId>[1-8]),"?(?P<value>[^,"]+)"?,(?P<id>\d+)\},?')
+        }
+        if rec != {}{
+         rec = merge(rec, parse_regex!(.file, r'(?P<db_uid>\w{8}\-\w{4}-\w{4}-\w{4}-\w{12})'))
+         . = rec
+         .name = "LGF"
+        } else { abort }
+        
+        
+  parse_ibase:
+    type: remap
+    inputs: [ ibases_logs ]
+    source: |-
+      .name = "IBASE"
+      .message = to_string(.message)  ?? ""
+      .events = []
+      counter = 0
+      event  = {}
+      
+      for_each(array!(split!(.message, "\n"))) -> |_index, value| {
+        
+        # перед [ иногда может быть мусор
+        if contains(value, "[") {
+        i = find(value, "[")
+        value = slice!(value, i)
+      }
+      
+        value = replace(value, r'^\s*(.*?)\s*$', "$$1")
+        if starts_with(value, "[") {
+          if exists(event.ID) {
+           event.name = .name
+            .events = push(.events, event)
+          }
+          counter = 0
+          event = {}
+          event.title = replace(value, r'^\S(.*)\S$', "$$1")
+        } else {
+          counter = counter + 1
+          if starts_with(value, "Connect=") { 
+            value = replace(value, "Connect=", "")
+            value = replace(value, r'^(.*?)[;\s]*$', "$$1")
+            event = merge(event, parse_key_value!(value, "=", ";"))
+          } else if starts_with(value, "ID=") {
+           event.ID = replace(value, "ID=", "")
+          }   
+        }
+      }
+            if exists(event.ID) {
+              event.name = .name
+              .events = push(.events, event)
+          }
+      . = .events
+
+      
+sinks:
+
+    
+  lgf:
+    type: file
+    inputs: [ "parse_*" ]
+    encoding:
+       codec: json
+    path: /tmp/{{ .name }}.log
+    
+    
+  clickhouse:
+    type: clickhouse
+    inputs: [ "parse_*" ]
+    endpoint: ${CLICKHOUSE_SERVER}
+    auth:
+      strategy: basic
+      user: ${CLICKHOUSE_USER}
+      password: ${CLICKHOUSE_PASSWORD}
+    database: ${CLICKHOUSE_DATABASE}
+    skip_unknown_fields: true
+    table: "{{ .name }}"
+    batch:
+      max_events: 10000
+      timeout_secs: 15
+    acknowledgements:
+      enabled: true
+
+
