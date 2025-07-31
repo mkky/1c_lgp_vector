@@ -84,8 +84,12 @@ transforms:
         base_ts       = floor(startEpoch + parsed / 10000)
         corrected_ts  = base_ts
         .TransactionDate   = format_timestamp!(parse_timestamp!(to_string(corrected_ts),
-                                "%s",),  "%Y-%m-%d %H:%M:%S",
+                                "%s",timezone: "UTC"),  "%Y-%m-%d %H:%M:%S",
+                                timezone: "UTC") # на самом деле здесь не UTC а timezone(default)
+         # преобразуем из default в UTC
+        .TransactionDate = format_timestamp!(parse_timestamp!(.TransactionDate, "%Y-%m-%d %H:%M:%S"),  "%Y-%m-%d %H:%M:%S",
                                 timezone: "UTC")
+                                
         .TransactionNumber = parse_int!(hexNumber, base: 16)
       } else {
         .TransactionDate   = null
