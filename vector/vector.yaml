@@ -74,15 +74,15 @@ transforms:
         } else {
         .Data = ""
         }
-      startEpoch = -62135632799
+      startEpoch = -62135596800
+      
       parts         = split!(.TransactionDate, ",")
       hexDate       = parts[0]
       hexNumber     = parts[1]
       if hexDate != "0" && hexDate != "" {
         parsed        = parse_int!(hexDate, base: 16)
-        base_ts       = ceil(startEpoch + parsed / 10000)
-        corrected_ts  = base_ts + (7 * 3600)
-        #ns            = corrected_ts * 1000000000
+        base_ts       = floor(startEpoch + parsed / 10000)
+        corrected_ts  = base_ts
         .TransactionDate   = format_timestamp!(parse_timestamp!(to_string(corrected_ts),
                                 "%s",),  "%Y-%m-%d %H:%M:%S",
                                 timezone: "UTC")
