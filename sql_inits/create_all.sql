@@ -122,16 +122,16 @@ SELECT
 FROM BIT.LGP AS p
 
 -- обогащение по lgf (typeId=1..8)
-LEFT JOIN BIT.LGF AS u  ON p.db_uid = u.db_uid AND u.typeId = 1 AND p.User        = u.id
-LEFT JOIN BIT.LGF AS c  ON p.db_uid = c.db_uid AND c.typeId = 2 AND p.Computer    = c.id
-LEFT JOIN BIT.LGF AS a  ON p.db_uid = a.db_uid AND a.typeId = 3 AND p.Application = a.id
-LEFT JOIN BIT.LGF AS e  ON p.db_uid = e.db_uid AND e.typeId = 4 AND p.Event       = e.id
-LEFT JOIN BIT.LGF AS m  ON p.db_uid = m.db_uid AND m.typeId = 5 AND p.Metadata    = m.id
-LEFT JOIN BIT.LGF AS s  ON p.db_uid = s.db_uid AND s.typeId = 6 AND p.Server      = s.id
-LEFT JOIN BIT.LGF AS mp ON p.db_uid = mp.db_uid AND mp.typeId= 7 AND p.MainPort    = mp.id
-LEFT JOIN BIT.LGF AS ap ON p.db_uid = ap.db_uid AND ap.typeId= 8 AND p.AddPort     = ap.id
+LEFT ANY JOIN BIT.LGF AS u  ON p.db_uid = u.db_uid AND u.typeId = 1 AND p.User        = u.id
+LEFT ANY JOIN BIT.LGF AS c  ON p.db_uid = c.db_uid AND c.typeId = 2 AND p.Computer    = c.id
+LEFT ANY JOIN BIT.LGF AS a  ON p.db_uid = a.db_uid AND a.typeId = 3 AND p.Application = a.id
+LEFT ANY JOIN BIT.LGF AS e  ON p.db_uid = e.db_uid AND e.typeId = 4 AND p.Event       = e.id
+LEFT ANY JOIN BIT.LGF AS m  ON p.db_uid = m.db_uid AND m.typeId = 5 AND p.Metadata    = m.id
+LEFT ANY JOIN BIT.LGF AS s  ON p.db_uid = s.db_uid AND s.typeId = 6 AND p.Server      = s.id
+LEFT ANY JOIN BIT.LGF AS mp ON p.db_uid = mp.db_uid AND mp.typeId= 7 AND p.MainPort    = mp.id
+LEFT ANY JOIN BIT.LGF AS ap ON p.db_uid = ap.db_uid AND ap.typeId= 8 AND p.AddPort     = ap.id
 
 -- ваша новая таблица IBASE
-LEFT JOIN BIT.IBASE AS ib
+LEFT ANY JOIN BIT.IBASE AS ib
   ON ib.ID = p.db_uid
 ;
