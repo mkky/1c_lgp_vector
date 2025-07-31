@@ -83,7 +83,7 @@ transforms:
         base_ts       = ceil(startEpoch + parsed / 10000)
         corrected_ts  = base_ts + (7 * 3600)
         #ns            = corrected_ts * 1000000000
-        .TransactionDate   = format_timestamp!(parse_timestamp!(to_string!(corrected_ts),
+        .TransactionDate   = format_timestamp!(parse_timestamp!(to_string(corrected_ts),
                                 "%s",),  "%Y-%m-%d %H:%M:%S",
                                 timezone: "UTC")
         .TransactionNumber = parse_int!(hexNumber, base: 16)
@@ -100,6 +100,7 @@ transforms:
     source: |-
         rec = {}
         .message = to_string(.message)  ?? ""
+        err1 =""; err2=""; err3=""
         if starts_with(.message, "{5,") || starts_with(.message, "{1,") {
           rec, err1 = parse_regex(.message, r'^\{(?P<typeId>[1-8]),(?P<uuid>[^,]+),"(?P<value>[^,]+)",(?P<id>\d+)\},?')
         } else if starts_with(.message, "{7,") || starts_with(.message, "{8,") {
@@ -107,7 +108,7 @@ transforms:
         }else {
          rec, err3 = parse_regex(.message, r'^\{(?P<typeId>[1-8]),"?(?P<value>[^,"]+)"?,(?P<id>\d+)\},?')
         }
-        if rec != {}{
+        if rec != {} && (err1 ==null || err2 ==null || err3 ==null) {
          rec = merge(rec, parse_regex!(.file, r'(?P<db_uid>\w{8}\-\w{4}-\w{4}-\w{4}-\w{12})'))
          . = rec
          .name = "LGF"
@@ -233,7 +234,7 @@ transforms:
       counter = 0
       event  = {}
       
-      for_each(array!(split!(.message, "\n"))) -> |_index, value| {
+      for_each(array(split(.message, "\n"))) -> |_index, value| {
         
         # перед [ иногда может быть мусор
         if contains(value, "[") {
