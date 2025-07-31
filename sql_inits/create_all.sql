@@ -42,7 +42,8 @@ CREATE TABLE BIT.LGF
     uuid     String,
     value    String
 )
-ENGINE = TinyLog();
+ENGINE = ReplacingMergeTree()
+ORDER BY (db_uid, typeId, id);
 
 CREATE TABLE BIT.IBASE
 (
