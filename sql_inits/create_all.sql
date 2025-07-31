@@ -109,7 +109,7 @@ SELECT
     p.Data,
     p.DataPresentation,
     p.Session,
-    p.db_uid,
+    p.db_uid as db_uid,
     p.host,
     p.FileName,
 
@@ -135,3 +135,113 @@ LEFT ANY JOIN BIT.LGF AS ap ON p.db_uid = ap.db_uid AND ap.typeId= 8 AND p.AddPo
 LEFT ANY JOIN BIT.IBASE AS ib
   ON ib.ID = p.db_uid
 ;
+
+
+CREATE TABLE BIT.REG1
+(
+    `DateTime` DateTime('UTC') CODEC(Delta(4), LZ4),
+    `TransactionStatus` LowCardinality(String),
+    `TransactionDate` DateTime('UTC') CODEC(Delta(4), LZ4),
+    `TransactionNumber` UInt64 CODEC(Delta(4), LZ4),
+    `UserUuid` String CODEC(LZ4),
+    `User` String CODEC(ZSTD(9)),
+    `Computer` String CODEC(ZSTD(9)),
+    `Application` LowCardinality(String),
+    `Connection` UInt32 CODEC(DoubleDelta, LZ4),
+    `Event` LowCardinality(String),
+    `Severity` LowCardinality(String),
+    `Comment` String CODEC(ZSTD(19)),
+    `MetadataUuid` String CODEC(LZ4),
+    `Metadata` String CODEC(ZSTD(19)),
+    `Data` String CODEC(ZSTD(19)),
+    `DataPresentation` String CODEC(ZSTD(19)),
+    `Server` LowCardinality(String),
+    `MainPort` UInt16 CODEC(DoubleDelta, LZ4),
+    `AddPort` UInt16 CODEC(DoubleDelta, LZ4),
+    `Session` UInt32 CODEC(DoubleDelta, LZ4),
+    `db_uid` LowCardinality(String),
+    `host` LowCardinality(String),
+    `FileName` String CODEC(ZSTD(9)),
+    `date` Date MATERIALIZED toDate(DateTime)
+)
+ENGINE = MergeTree
+PARTITION BY toYYYYMM(DateTime)
+ORDER BY (DateTime, Severity, Event, TransactionNumber)
+COMMENT 'Журнал регистрации событий 1С';
+
+
+
+CREATE VIEW BIT.JOURNAL_REG_WITH_OLD_DATA AS
+
+select 
+  DateTime,
+  TransactionStatus,
+  TransactionDate,
+  TransactionNumber,
+  
+  User,
+  UserUUID,
+  
+  Computer,
+  Application,
+  Event,
+  Metadata,
+  MetadataUUID,
+  Server,
+  MainPort,
+  AddPort,
+  
+  Connection,
+  Severity,
+  Comment,
+  Data,
+  DataPresentation,
+  Session,
+  db_uid,
+  host,
+  FileName,
+  
+  IBASE_File,
+  IBASE_Ref,
+  IBASE_Srvr,
+  IBASE_Title
+  
+from BIT.JOURNAL_REG
+
+UNION ALL
+
+select
+  DateTime,
+  TransactionStatus,
+  TransactionDate,
+  TransactionNumber,
+  
+  User,
+  UserUuid,
+  
+  Computer,
+  Application,
+  Event,
+  Metadata,
+  MetadataUuid,
+  Server,
+  toString(MainPort),
+  toString(AddPort),
+  
+  Connection,
+  Severity,
+  Comment,
+  Data,
+  DataPresentation,
+  Session,
+  db_uid,
+  host,
+  FileName,
+  
+  ib2.File    AS IBASE_File,
+  ib2.Ref     AS IBASE_Ref,
+  ib2.Srvr    AS IBASE_Srvr,
+  ib2.title   AS IBASE_Title
+  
+from BIT.REG1 as jr LEFT ANY JOIN BIT.IBASE AS ib2
+  ON ib2.ID = jr.db_uid;
