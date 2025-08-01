@@ -65,42 +65,42 @@ SELECT
     -- User
     p.User               AS UserID,
     u.value              AS User,
-    u.uuid               AS UserUUID,
+    u.uuid               AS UserUuid,
 
     -- Computer
     p.Computer           AS ComputerID,
     c.value              AS Computer,
-    c.uuid               AS ComputerUUID,
+    c.uuid               AS ComputerUuid,
 
     -- Application
     p.Application        AS ApplicationID,
     a.value              AS Application,
-    a.uuid               AS ApplicationUUID,
+    a.uuid               AS ApplicationUuid,
 
     -- Event
     p.Event              AS EventID,
     e.value              AS Event,
-    e.uuid               AS EventUUID,
+    e.uuid               AS EventUuid,
 
     -- Metadata
     p.Metadata           AS MetadataID,
     m.value              AS Metadata,
-    m.uuid               AS MetadataUUID,
+    m.uuid               AS MetadataUuid,
 
     -- Server
     p.Server             AS ServerID,
     s.value              AS Server,
-    s.uuid               AS ServerUUID,
+    s.uuid               AS ServerUuid,
 
     -- MainPort
     p.MainPort           AS MainPortID,
     mp.value             AS MainPort,
-    mp.uuid              AS MainPortUUID,
+    mp.uuid              AS MainPortUuid,
 
     -- AddPort
     p.AddPort            AS AddPortID,
     ap.value             AS AddPort,
-    ap.uuid              AS AddPortUUID,
+    ap.uuid              AS AddPortUuid,
 
     -- остальные поля из lgp
     p.Connection,
@@ -180,13 +180,13 @@ select
   TransactionNumber,
   
   User,
-  UserUUID,
+  UserUuid,
   
   Computer,
   Application,
   Event,
   Metadata,
-  MetadataUUID,
+  MetadataUuid,
   Server,
   MainPort,
   AddPort,
