@@ -1,0 +1,37 @@
+timezone: Europe/Moscow
+api:
+  enabled: true
+
+sources:
+  lgp_logs:
+    type: file
+    include:
+      - "/var/log/**/1Cv8Log/*.lgp"
+    fingerprint:
+      strategy: device_and_inode
+    multiline:
+      start_pattern: "^\\{\\d{14},\\w,"
+      condition_pattern: "^\\{\\d{14},\\w,"
+      mode: halt_before
+      timeout_ms: 1000
+      
+transforms:
+  parse_lgp:
+    type: remap
+    inputs: [ lgp_logs ]
+    source: |-
+      parsed, err = parse_regex(.message, r'\{(?P<DateTimeRaw>\d{14}),(?P<TransactionStatus>\w),\s*\{(?P<TransactionDate>[^\}]+)\},(?P<User>\d+),(?P<Computer>\d+),(?P<Application>\d+),(?P<Connection>\d+),(?P<Event>\d+),(?P<Severity>\w),"(?P<Comment>[\s\S]*?)",(?P<Metadata>\d+),\s*(?P<Data>[\s\S]+?\}),"(?P<DataPresentation>.*?)",(?P<Server>\d+),(?P<MainPort>\d+),(?P<AddPort>\d+),(?P<Session>\d+)', numeric_groups: false)
+      if err != null {
+        abort
+      }
+      . = merge(., parsed)
+      .name = "LGP"
+      
+sinks:
+  lgf:
+    type: file
+    inputs: [ "parse_*" ]
+    encoding:
+       codec: json
+    path: /tmp/{{ .name }}.log
+    
